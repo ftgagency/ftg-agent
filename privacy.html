@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#17213b">
-  <meta name="description" content="Chính sách quyền riêng tư của FTG Agent Studio — bản demo.">
+  <meta name="description" content="Chính sách quyền riêng tư của FTG Agent Studio — bản giới thiệu và thử nghiệm.">
   <title>Quyền riêng tư — FTG Agent Studio</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -13,27 +13,28 @@
     <header class="privacy-top"><a class="privacy-brand" href="./"><span class="privacy-brand-mark">F</span><span>FTG AGENT STUDIO</span></a><a class="privacy-back" href="./">← VỀ TRANG CHỦ</a></header>
     <p class="overline"><span class="overline-mark"></span> THÔNG TIN SẢN PHẨM</p>
     <h1>CHÍNH SÁCH QUYỀN RIÊNG TƯ</h1>
-    <p class="privacy-lede">Trang này mô tả đúng hoạt động của bản demo FTG Agent hiện tại. Khi các kết nối Facebook, Google hoặc ChatGPT được triển khai, FTG phải cập nhật chính sách và thông báo cụ thể trước khi xin quyền của khách.</p>
-    <p class="privacy-updated">Cập nhật: 20 tháng 11, 2026 · Phiên bản demo</p>
+    <p class="privacy-lede">Trang này mô tả đúng bản FTG Agent hiện tại. Hermes runtime/provider, kết nối Facebook/Google/ChatGPT và đăng nhập khách chưa được bật trên website công khai.</p>
+    <p class="privacy-updated">Cập nhật: 20 tháng 11, 2026 · Phiên bản giới thiệu</p>
     <article class="privacy-content">
-      <h2>1. BẢN DEMO NÀY LÀM GÌ</h2>
-      <p>FTG Agent Studio hiện là website tĩnh để giới thiệu luồng trợ lý và hướng dẫn thiết lập. Trang không có đăng nhập khách hàng, không đăng nhập Facebook, Google hay ChatGPT, không gọi API của các nền tảng này và không có endpoint nhận webhook hoặc OAuth callback. Hermes Agent và LLM chưa được kết nối.</p>
-      <h2>2. HỘI THOẠI MINH HỌA</h2>
-      <p>Phần chat sử dụng các câu hỏi và câu trả lời mẫu được viết sẵn trong trình duyệt. Nội dung bạn nhập chỉ được xử lý trong phiên trang đang mở bằng JavaScript phía trình duyệt; website không gửi nội dung hội thoại đó lên mô hình AI, Google Sheets, Facebook hoặc máy chủ ứng dụng.</p>
+      <h2>1. BẢN WEBSITE HIỆN TẠI</h2>
+      <p>GitHub Pages chỉ phục vụ giao diện tĩnh. Website này chưa có tài khoản khách hàng, chưa gọi Hermes hoặc model LLM, chưa đăng nhập Facebook/Google, chưa đọc/ghi Sheets, chưa nhận webhook và chưa có endpoint MCP. Bridge Hermes thử nghiệm chỉ chạy local nếu người vận hành tự khởi động; nó không được triển khai cùng website này.</p>
+      <h2>2. HỘI THOẠI MẪU</h2>
+      <p>Khi Hermes bridge chưa kết nối, phần chat dùng FAQ mẫu viết sẵn trong trình duyệt và không gửi hội thoại lên máy chủ. Nếu người vận hành tự bật bridge local, tin nhắn sẽ được gửi tới Hermes Agent cùng provider đã cấu hình trên host. Hermes có thể gọi các tools được bật ở đó; chỉ thử với dữ liệu giả và xem chính sách lưu trữ của provider tương ứng.</p>
       <h2>3. THÔNG TIN XÁC THỰC VÀ DỮ LIỆU KHÁCH HÀNG</h2>
-      <p>Không nhập mật khẩu, access token, refresh token, App Secret, Client Secret hoặc dữ liệu khách hàng thật vào trang demo, hội thoại, URL hay bảng tính mẫu. Bản hiện tại không có nơi lưu trữ an toàn cho các thông tin này.</p>
-      <h2>4. BẢN NHÁP CẤU HÌNH LLM</h2>
-      <p>Nếu bạn dùng chức năng lưu bản nháp LLM, địa chỉ API base và tên model được lưu trong localStorage của trình duyệt trên thiết bị này. Đây chỉ là bản nháp, không phải kết nối. Không nhập mật khẩu, API key hoặc token vào các trường đó. Bạn có thể xóa dữ liệu website trong trình duyệt để xóa bản nháp.</p>
+      <p>Không nhập mật khẩu, access token, refresh token, App Secret, Client Secret, API key hoặc dữ liệu khách hàng thật vào website, hội thoại, URL hay bảng tính mẫu. Bản hiện tại không có kho lưu trữ an toàn cho các thông tin này.</p>
+      <h2>4. BẢN NHÁP PROVIDER</h2>
+      <p>Nếu dùng chức năng lưu lựa chọn provider, tên provider được lưu trong localStorage trên trình duyệt của thiết bị hiện tại. Đây chỉ là bản nháp; không thực hiện đăng nhập, không lưu API key và không kết nối Hermes. Xóa dữ liệu website trong trình duyệt sẽ xóa bản nháp này.</p>
       <h2>5. PHÂN TÍCH VÀ COOKIES</h2>
-      <p>Bản demo hiện không cài cookie phân tích, quảng cáo hoặc theo dõi hành vi trong sản phẩm. Nhà cung cấp nền tảng lưu trữ website có thể ghi nhận log kỹ thuật thông thường để phục vụ việc phân phối trang.</p>
-      <h2>6. KHI TÍCH HỢP ĐƯỢC BẬT</h2>
-      <p>Trước khi kết nối thật, FTG cần công bố loại dữ liệu được truy cập, mục đích, thời gian lưu, bên xử lý, cách mã hóa và xóa/thu hồi dữ liệu; triển khai cơ chế OAuth và webhook bảo mật; đồng thời hoàn tất các yêu cầu xét duyệt của Meta, Google và ChatGPT khi áp dụng. Khách sẽ tự cấp quyền cho tài khoản của mình và có thể thu hồi quyền theo hướng dẫn của nền tảng.</p>
+      <p>Bản giới thiệu không cài cookie phân tích, quảng cáo hoặc theo dõi hành vi trong sản phẩm. Nhà cung cấp nơi lưu website có thể ghi nhận log kỹ thuật thông thường để phân phối trang.</p>
+      <h2>6. TRƯỚC KHI BẬT KẾT NỐI THẬT</h2>
+      <p>Trước khi mở cho khách, FTG cần công bố loại dữ liệu được truy cập, mục đích, thời gian lưu và bên xử lý; triển khai backend HTTPS, xác thực khách, mã hóa credentials theo từng khách, quyền tối thiểu, cơ chế thu hồi và nhật ký kiểm toán; đồng thời hoàn tất xét duyệt Meta/Google khi được yêu cầu. Khách phải tự cấp quyền cho tài khoản của mình. Chính sách này cần được cập nhật trước khi thu thập dữ liệu thật.</p>
       <h2>7. LIÊN HỆ</h2>
-      <p>Để hỏi về bản demo hoặc cách chuẩn bị triển khai, liên hệ FTG qua <a href="https://zalo.me/0918212460" target="_blank" rel="noopener">Zalo 0918 212 460</a>.</p>
+      <p>Để hỏi về bản giới thiệu hoặc chuẩn bị triển khai, liên hệ FTG qua <a href="https://zalo.me/0918212460" target="_blank" rel="noopener">Zalo 0918 212 460</a>.</p>
       <h2>8. TÀI LIỆU NỀN TẢNG</h2>
       <ul>
         <li><a href="https://developers.facebook.com/documentation/business-messaging/messenger-platform/get-started" target="_blank" rel="noopener">Meta Messenger Platform</a></li>
         <li><a href="https://developers.google.com/workspace/sheets/api/scopes" target="_blank" rel="noopener">Google Sheets API scopes</a></li>
+        <li><a href="https://hermes-agent.nousresearch.com/docs/integrations/providers" target="_blank" rel="noopener">Hermes Agent providers</a></li>
         <li><a href="https://help.openai.com/en/articles/12584461-connecting-custom-mcp-servers-in-chatgpt" target="_blank" rel="noopener">Custom MCP servers trong ChatGPT</a></li>
       </ul>
     </article>

@@ -109,42 +109,39 @@ $('#closeDialog')?.addEventListener('click', () => dialog.close());
 $('#dialogDone')?.addEventListener('click', () => dialog.close());
 dialog?.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
 
-const llmStorageKey = 'ftg-agent-llm-draft-v1';
-function showLlmDraft(base, model) {
-  $('#llmBase').value = base;
-  $('#llmModel').value = model;
-  $('#configOutput').textContent = `model:\n  provider: custom\n  default: ${JSON.stringify(model)}\n  base_url: ${JSON.stringify(base)}\n  key_env: HERMES_LLM_API_KEY`;
-  $('#configResult').hidden = false;
+const brainDraftKey = 'ftg-agent-hermes-brain-draft-v1';
+const providerLabels = {
+  'openai-codex': 'OpenAI Codex / ChatGPT subscription',
+  anthropic: 'Claude / Anthropic',
+  custom: 'Custom endpoint',
+};
+const providerGuides = {
+  'openai-codex': 'Hermes có provider OpenAI Codex cho gói ChatGPT/Codex subscription; đăng nhập bằng device code trong hermes model. Đây chỉ là lựa chọn nháp, chưa mở trang đăng nhập hay dùng subscription.',
+  anthropic: 'Hermes hỗ trợ Anthropic trực tiếp. Có thể dùng Anthropic API key (tính phí theo mức dùng) hoặc OAuth Claude Max kèm extra usage; Claude Pro đơn thuần không đủ cho đường OAuth này. Chưa nhập khóa hay đăng nhập.',
+  custom: 'Chọn provider/model và endpoint tương thích trong Hermes ở máy chủ. Chỉ lưu key trong secret/env của Hermes; không nhập key trên website này.',
+};
+const providerChoice = $('#providerChoice');
+function updateProviderDraftStatus(isSaved = false) {
+  if (!providerChoice) return;
+  const provider = providerChoice.value;
+  $('#providerHelp').textContent = providerGuides[provider] || 'Hermes là bộ khung Agent. Chọn Claude, OpenAI Codex hoặc provider khác; cấu hình thực hiện trong Hermes, không lưu API key trên website.';
+  $('#providerDraftStatus').textContent = provider
+    ? `${isSaved ? 'Đã lưu nháp' : 'Lựa chọn nháp'}: ${providerLabels[provider]}. Chưa cấu hình hoặc kết nối Hermes.`
+    : 'Chưa chọn provider. Không có thông tin đăng nhập được lưu.';
 }
 try {
-  const saved = JSON.parse(localStorage.getItem(llmStorageKey) || 'null');
-  if (saved && typeof saved.base === 'string' && typeof saved.model === 'string') showLlmDraft(saved.base, saved.model);
-} catch (_) { /* Bản nháp có thể không tồn tại hoặc bộ nhớ bị chặn. */ }
-
-$('#llmForm')?.addEventListener('submit', (event) => {
-  event.preventDefault();
-  const base = $('#llmBase').value.trim();
-  const model = $('#llmModel').value.trim();
+  const saved = JSON.parse(localStorage.getItem(brainDraftKey) || 'null');
+  if (saved && Object.prototype.hasOwnProperty.call(providerLabels, saved.provider)) providerChoice.value = saved.provider;
+} catch (_) { /* Bản nháp không tồn tại hoặc bộ nhớ bị chặn. */ }
+updateProviderDraftStatus(true);
+providerChoice?.addEventListener('change', () => updateProviderDraftStatus(false));
+$('#saveProviderDraft')?.addEventListener('click', () => {
+  const provider = providerChoice?.value || '';
   try {
-    const url = new URL(base);
-    const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
-    if ((!loopback && url.protocol !== 'https:') || !['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) throw new Error('bad-url');
-    if (!model || /[\r\n\x00-\x1f]/.test(model)) throw new Error('bad-model');
-    showLlmDraft(base, model);
-    try {
-      localStorage.setItem(llmStorageKey, JSON.stringify({base, model}));
-      notify('Đã lưu bản nháp trên thiết bị này. Chưa kết nối LLM.');
-    } catch (_) { notify('Không thể lưu trên thiết bị này; cấu hình chỉ hiển thị tạm thời.'); }
-  } catch (_) {
-    notify('Nhập endpoint HTTPS không có mật khẩu, token, query hoặc fragment và tên model hợp lệ.');
-  }
-});
-
-$('#copyConfig')?.addEventListener('click', async () => {
-  try {
-    await navigator.clipboard.writeText($('#configOutput').textContent);
-    notify('Đã sao chép cấu hình mẫu, không chứa khóa API.');
-  } catch (_) { notify('Không thể sao chép tự động; hãy chọn và sao chép cấu hình bên dưới.'); }
+    localStorage.setItem(brainDraftKey, JSON.stringify({provider}));
+    updateProviderDraftStatus(true);
+    notify(provider ? 'Đã lưu lựa chọn provider trên thiết bị; Hermes chưa kết nối.' : 'Chưa chọn provider.');
+  } catch (_) { notify('Không thể lưu trên thiết bị; lựa chọn chỉ hiển thị tạm thời.'); }
 });
 
 let hermesConnected = false;
@@ -156,15 +153,15 @@ async function refreshHermesStatus() {
     const status = await response.json();
     if (!status || status.connected !== true || status.model !== 'hermes-agent') return;
     hermesConnected = true;
-    $('#hermesState').textContent = 'ĐÃ NỐI · LOCAL';
+    $('#hermesState').textContent = 'GATEWAY ON';
     $('#hermesState').classList.add('engine-status-live');
-    $('#hermesBadge').innerHTML = '<i></i> HERMES · MÁY CÁ NHÂN';
-    $('#hermesBadge').classList.remove('status-tag-demo');
+    $('#hermesBadge').innerHTML = '<i></i> HERMES API · LOCAL';
+    $('#hermesBadge').classList.remove('status-tag-demo', 'status-tag-pending');
     $('#hermesBadge').classList.add('status-tag-live');
-    $('#chatHeaderStatus').textContent = 'Hermes Agent local · chỉ dùng thử trên máy cá nhân';
-    $('#chatModeTag').textContent = 'HERMES LOCAL · THỬ NGHIỆM';
-    $('#chatDisclaimer').textContent = 'Câu hỏi gửi tới Hermes và LLM provider bạn đã cấu hình. Chỉ thử dữ liệu giả; không dùng URL public hoặc dữ liệu khách hàng.';
-  } catch (_) { /* Pages hoặc bản xem thử tĩnh không có API: giữ chế độ FAQ demo. */ }
+    $('#chatHeaderStatus').textContent = 'Hermes gateway local · cần thử chat để xác nhận provider';
+    $('#chatModeTag').textContent = 'HERMES LOCAL · DEV';
+    $('#chatDisclaimer').textContent = 'Tin nhắn sẽ tới Hermes Agent và provider đã cấu hình trên máy chủ. Hermes có thể dùng tools theo cấu hình host; chỉ thử dữ liệu giả, không dùng URL công khai hoặc dữ liệu khách hàng.';
+  } catch (_) { /* GitHub Pages/bản tĩnh không có bridge: giữ chế độ FAQ demo. */ }
 }
 
 const answers = [
@@ -219,7 +216,7 @@ function submitDemo(question) {
   body.scrollTop = body.scrollHeight;
   if (hermesConnected) {
     const messages = [
-      {role: 'system', content: 'Bạn là trợ lý FTG đang thử nghiệm trên máy cá nhân. Chỉ dùng thông tin do người dùng cung cấp. Không thực hiện hành động bên ngoài, không gửi tin nhắn, không sửa tệp/tài khoản, không dùng công cụ terminal. Nếu thiếu dữ liệu hoặc không chắc, nói rõ và chuyển người dùng tới nhân viên FTG qua Zalo 0918 212 460. Trả lời tiếng Việt ngắn gọn.'},
+      {role: 'system', content: 'Bạn là trợ lý FTG đang thử nghiệm. Chỉ dùng thông tin được cung cấp. Không gửi tin nhắn hoặc sửa dữ liệu bên ngoài nếu người dùng chưa yêu cầu; nếu thiếu dữ liệu, nói rõ và chuyển tới nhân viên FTG qua Zalo 0918 212 460. Trả lời tiếng Việt ngắn gọn.'},
       ...liveHistory,
       {role: 'user', content: text},
     ];
@@ -230,13 +227,15 @@ function submitDemo(question) {
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
       const answer = result?.choices?.[0]?.message?.content;
-      if (typeof answer !== 'string' || !answer.trim()) throw new Error('empty_hermes_answer');
+      if (typeof answer !== 'string' || !answer.trim()) throw new Error('empty_llm_answer');
       liveHistory.push({role: 'user', content: text}, {role: 'assistant', content: answer});
       typing.remove();
-      addMessage(answer, 'agent', 'Hermes Agent · bridge localhost; đang thử nghiệm, không dành cho khách hàng.');
+      $('#chatHeaderStatus').textContent = 'Đã nhận phản hồi từ Hermes local; provider hoạt động ở lượt thử này.';
+      addMessage(answer, 'agent', 'Hermes Agent đã trả lời qua bridge localhost; thử nghiệm, không dành cho khách hàng.');
     }).catch(() => {
       typing.remove();
-      addMessage('Hermes chưa trả lời được. Hãy kiểm tra gateway/model và thử lại; đây không phải phản hồi từ Agent.', 'agent', 'Lỗi kết nối Hermes · không chuyển ngầm sang FAQ demo.');
+      $('#chatHeaderStatus').textContent = 'Chưa có phản hồi; kiểm tra trạng thái Hermes/provider trên máy chạy Agent.';
+      addMessage('Hermes chưa trả lời được. Hãy kiểm tra gateway/provider và thử lại; đây không phải phản hồi thật.', 'agent', 'Lỗi Hermes/provider · không chuyển ngầm sang FAQ demo.');
     });
     return;
   }
