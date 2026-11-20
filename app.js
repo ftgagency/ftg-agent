@@ -78,6 +78,17 @@ const guideContent = {
     ],
     links: [['Hướng dẫn OpenAI về custom MCP', 'https://help.openai.com/en/articles/12584461-connecting-custom-mcp-servers-in-chatgpt']],
     warning: 'Không thể kết nối ChatGPT chỉ bằng trang dashboard này. Đừng nhập URL giả hoặc tin rằng trạng thái “đã nối” khi chưa có endpoint.'
+  },
+  account: {
+    kicker: 'TÀI KHOẢN · EMAIL / ĐIỆN THOẠI', title: 'Đăng nhập khách hàng',
+    intro: 'Dự kiến hỗ trợ Gmail, Hotmail hoặc các email khác và số điện thoại. Bản demo hiện chưa thể tạo tài khoản hay gửi mã đăng nhập.',
+    steps: [
+      ['Nhập thông tin liên hệ', 'Khách chọn email hoặc số điện thoại của chính mình. Email Gmail và Hotmail đều là địa chỉ email thông thường.'],
+      ['Xác minh mã một lần', 'Sau khi hệ thống xác thực được triển khai, khách nhận mã qua email hoặc SMS và nhập mã để đăng nhập. Không cần gửi mật khẩu email cho FTG.'],
+      ['Tài khoản và quyền riêng', 'Mỗi khách có tài khoản, cấu hình Agent và quyền truy cập riêng. Cần backend, dịch vụ gửi mã, chống lạm dụng và bảo vệ dữ liệu trước khi vận hành.']
+    ],
+    links: [],
+    warning: 'Đăng nhập chưa được triển khai. Chưa thu email hay số điện thoại, chưa gửi mã và chưa có phiên đăng nhập trong bản demo.'
   }
 };
 
@@ -97,6 +108,44 @@ $$('[data-open-guide]').forEach((button) => button.addEventListener('click', () 
 $('#closeDialog')?.addEventListener('click', () => dialog.close());
 $('#dialogDone')?.addEventListener('click', () => dialog.close());
 dialog?.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+
+const llmStorageKey = 'ftg-agent-llm-draft-v1';
+function showLlmDraft(base, model) {
+  $('#llmBase').value = base;
+  $('#llmModel').value = model;
+  $('#configOutput').textContent = `model:\n  provider: custom\n  default: ${JSON.stringify(model)}\n  base_url: ${JSON.stringify(base)}\n  key_env: HERMES_LLM_API_KEY`;
+  $('#configResult').hidden = false;
+}
+try {
+  const saved = JSON.parse(localStorage.getItem(llmStorageKey) || 'null');
+  if (saved && typeof saved.base === 'string' && typeof saved.model === 'string') showLlmDraft(saved.base, saved.model);
+} catch (_) { /* Bản nháp có thể không tồn tại hoặc bộ nhớ bị chặn. */ }
+
+$('#llmForm')?.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const base = $('#llmBase').value.trim();
+  const model = $('#llmModel').value.trim();
+  try {
+    const url = new URL(base);
+    const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+    if ((!loopback && url.protocol !== 'https:') || !['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) throw new Error('bad-url');
+    if (!model || /[\r\n\x00-\x1f]/.test(model)) throw new Error('bad-model');
+    showLlmDraft(base, model);
+    try {
+      localStorage.setItem(llmStorageKey, JSON.stringify({base, model}));
+      notify('Đã lưu bản nháp trên thiết bị này. Chưa kết nối LLM.');
+    } catch (_) { notify('Không thể lưu trên thiết bị này; cấu hình chỉ hiển thị tạm thời.'); }
+  } catch (_) {
+    notify('Nhập endpoint HTTPS không có mật khẩu, token, query hoặc fragment và tên model hợp lệ.');
+  }
+});
+
+$('#copyConfig')?.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText($('#configOutput').textContent);
+    notify('Đã sao chép cấu hình mẫu, không chứa khóa API.');
+  } catch (_) { notify('Không thể sao chép tự động; hãy chọn và sao chép cấu hình bên dưới.'); }
+});
 
 const answers = [
   { match: /giá|chi phí|bao nhiêu|phí/i, text: 'Theo thông tin mẫu của FTG, dịch vụ thiết lập AI Agent là 1.500.000đ, thường mất khoảng 1–2 giờ và có kèm hướng dẫn vận hành. Đây là FAQ minh họa; hãy xác nhận báo giá hiện hành với FTG trước khi áp dụng cho khách thật.', note: 'Nguồn: FAQ mẫu được viết sẵn trong bản demo; không lấy từ dữ liệu khách hàng.' },
