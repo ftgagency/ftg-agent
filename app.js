@@ -22,7 +22,7 @@ $$('[data-scroll]').forEach((button) => {
   button.addEventListener('click', () => scrollToSection(button.dataset.scroll));
 });
 
-const sectionIds = ['overview', 'workflow', 'connectors', 'setup'];
+const sectionIds = ['overview', 'workflow', 'connectors', 'hermes', 'setup'];
 if ('IntersectionObserver' in window) {
   const observer = new IntersectionObserver((entries) => {
     const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
@@ -147,6 +147,26 @@ $('#copyConfig')?.addEventListener('click', async () => {
   } catch (_) { notify('Không thể sao chép tự động; hãy chọn và sao chép cấu hình bên dưới.'); }
 });
 
+let hermesConnected = false;
+const liveHistory = [];
+async function refreshHermesStatus() {
+  try {
+    const response = await fetch(new URL('api/status', document.baseURI), {cache: 'no-store', credentials: 'same-origin'});
+    if (!response.ok) return;
+    const status = await response.json();
+    if (!status || status.connected !== true || status.model !== 'hermes-agent') return;
+    hermesConnected = true;
+    $('#hermesState').textContent = 'ĐÃ NỐI · LOCAL';
+    $('#hermesState').classList.add('engine-status-live');
+    $('#hermesBadge').innerHTML = '<i></i> HERMES · MÁY CÁ NHÂN';
+    $('#hermesBadge').classList.remove('status-tag-demo');
+    $('#hermesBadge').classList.add('status-tag-live');
+    $('#chatHeaderStatus').textContent = 'Hermes Agent local · chỉ dùng thử trên máy cá nhân';
+    $('#chatModeTag').textContent = 'HERMES LOCAL · THỬ NGHIỆM';
+    $('#chatDisclaimer').textContent = 'Câu hỏi gửi tới Hermes và LLM provider bạn đã cấu hình. Chỉ thử dữ liệu giả; không dùng URL public hoặc dữ liệu khách hàng.';
+  } catch (_) { /* Pages hoặc bản xem thử tĩnh không có API: giữ chế độ FAQ demo. */ }
+}
+
 const answers = [
   { match: /giá|chi phí|bao nhiêu|phí/i, text: 'Theo thông tin mẫu của FTG, dịch vụ thiết lập AI Agent là 1.500.000đ, thường mất khoảng 1–2 giờ và có kèm hướng dẫn vận hành. Đây là FAQ minh họa; hãy xác nhận báo giá hiện hành với FTG trước khi áp dụng cho khách thật.', note: 'Nguồn: FAQ mẫu được viết sẵn trong bản demo; không lấy từ dữ liệu khách hàng.' },
   { match: /bao lâu|thời gian|mất bao lâu|hướng dẫn/i, text: 'Một buổi thiết lập mẫu thường mất 1–2 giờ và bao gồm hướng dẫn vận hành. Thời gian thực tế phụ thuộc vào tài khoản, quyền ứng dụng và việc chuẩn bị dữ liệu.', note: 'FAQ mẫu · chưa kiểm tra lịch thực tế.' },
@@ -197,6 +217,29 @@ function submitDemo(question) {
   typing.innerHTML = '<span class="message-avatar">✳</span><div class="message-bubble"><span class="typing-indicator"><i></i><i></i><i></i></span></div>';
   body.appendChild(typing);
   body.scrollTop = body.scrollHeight;
+  if (hermesConnected) {
+    const messages = [
+      {role: 'system', content: 'Bạn là trợ lý FTG đang thử nghiệm trên máy cá nhân. Chỉ dùng thông tin do người dùng cung cấp. Không thực hiện hành động bên ngoài, không gửi tin nhắn, không sửa tệp/tài khoản, không dùng công cụ terminal. Nếu thiếu dữ liệu hoặc không chắc, nói rõ và chuyển người dùng tới nhân viên FTG qua Zalo 0918 212 460. Trả lời tiếng Việt ngắn gọn.'},
+      ...liveHistory,
+      {role: 'user', content: text},
+    ];
+    fetch(new URL('api/chat', document.baseURI), {
+      method: 'POST', credentials: 'same-origin', headers: {'content-type': 'application/json'},
+      body: JSON.stringify({messages}),
+    }).then(async (response) => {
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+      const answer = result?.choices?.[0]?.message?.content;
+      if (typeof answer !== 'string' || !answer.trim()) throw new Error('empty_hermes_answer');
+      liveHistory.push({role: 'user', content: text}, {role: 'assistant', content: answer});
+      typing.remove();
+      addMessage(answer, 'agent', 'Hermes Agent · bridge localhost; đang thử nghiệm, không dành cho khách hàng.');
+    }).catch(() => {
+      typing.remove();
+      addMessage('Hermes chưa trả lời được. Hãy kiểm tra gateway/model và thử lại; đây không phải phản hồi từ Agent.', 'agent', 'Lỗi kết nối Hermes · không chuyển ngầm sang FAQ demo.');
+    });
+    return;
+  }
   window.setTimeout(() => {
     typing.remove();
     const answer = localAnswer(text);
@@ -211,6 +254,9 @@ $('#chatForm')?.addEventListener('submit', (event) => {
 $$('[data-question]').forEach((button) => button.addEventListener('click', () => submitDemo(button.dataset.question)));
 $('#resetChat')?.addEventListener('click', () => {
   const body = $('#chatBody');
+  liveHistory.length = 0;
   body.innerHTML = '<div class="chat-date">HÔM NAY · HỘI THOẠI MINH HỌA</div><div class="message-row agent-message"><span class="message-avatar">✳</span><div class="message-bubble">Chào bạn! Mình là trợ lý demo của FTG. Bạn có thể hỏi về dịch vụ thiết lập AI Agent hoặc cách kết nối Facebook và Google. <small>Chỉ là FAQ ví dụ — chưa nối dữ liệu thật.</small></div></div>';
   notify('Đã xóa hội thoại demo.');
 });
+
+refreshHermesStatus();
